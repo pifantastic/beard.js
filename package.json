@@ -1,0 +1,13 @@
+{
+  "name": "beard",
+  "version": "0.0.1",
+  "description": "Sexy little web client for Node.JS",
+  "tags" : ["client", "http"],
+  "author": "Aaron Forsander <aaron.forsander@gmail.com>",
+  "homepage": "https://github.com/pifantastic/beard.js/README.md",
+  "dependencies": {
+    "underscore": "1.1.x"
+  },
+  "main": "beard",
+  "engines": { "node": ">= 0.4.10" }
+}
