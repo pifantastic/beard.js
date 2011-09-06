@@ -1,5 +1,6 @@
 
-    new(beard.Client)()
+    // Sexy shortand.
+    beard()
       .get('http://whatever.com')
       .done(function(data) {
         console.log('yay! status:' + this.statusCode)
@@ -8,15 +9,27 @@
         console.log(error)
       })
 
+    // More explicit.
     var client = new beard.Client()
-    client.download('http://barackobama.com/birth_certificate.txt')
-    client.fail(function(error) {
+    var request = client.download('http://barackobama.com/birth_certificate.txt')
+    request.fail(function(error) {
       console.log('ಠ_ಠ')
     })
-    client.done(function(cert) {
+    request.done(function(cert) {
       inspectForAuthenticity(cert)
     })
-    client.always(function() {
-      vote()
-    })
+    request.always(vote)
+
+    beard()
+      .post('http://github.com/login', { username: 'torvalds', password: 'micro$soft' })
+      .done(function() {
+        shell('rm -rf microsoft/windows-8')
+      })
+      .fail(function() {
+        shell('rm -rf microsoft/windows-me')
+      })
+      .always(function() {
+        shrug()
+      })
+
 

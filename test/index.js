@@ -64,6 +64,19 @@ vows.describe('beard().download').addBatch({
   }
 }).run({ error: false })
 
+vows.describe('beard().fail').addBatch({
+  'When fetching a malformed URL': {
+    topic: function () {
+      beard()
+        .download('http://127.0.0.1:WTF/')
+        .always(this.callback)
+    },
+    'we get a failure': function(err) {
+      assert.equal(toString.call(err), '[object Error]')
+    }
+  }
+}).run({ error: false })
+
 vows.describe('beard().post').addBatch({
   'When posting a Hello World message to an echo server': {
     topic: function () {
