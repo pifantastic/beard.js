@@ -6,17 +6,18 @@ var http = require('http')
   , _ = require('underscore')
 
 var Client = function Client(opts) {
-  this.options = _.extend(this.options, opts)
+  var defaults = {
+    followRedirects: true,
+    timeout: 60,
+    encoding: 'utf-8',
+    maxRedirects: 30
+  }
+
+  this.options = _.extend(defaults, opts)
   this.cookieJar = []
 }
 
 Client.prototype = {
-
-  options: {
-    followRedirects: true,
-    timeout: 60,
-    encoding: 'utf-8'
-  },
 
   option: function(option, value) {
     if (arguments.length == 2) {
@@ -24,7 +25,7 @@ Client.prototype = {
       return this
     }
 
-    return (option in this.options) ? this.options[option] : null
+    return (option in this.options) ? this.options[option] : undefined
   },
 
   post: function(url, data, options) {
@@ -99,13 +100,14 @@ Client.prototype = {
 
   _request: function(type, uri, data, opts, callback) {
     var self = this
+      , rxdata = ''
+      , client = http.request
+      , opts = opts || {}
 
-    // TODO: If encoding is 'binary', this should be a buffer.
-    var rxdata = ''
+    opts._numRedirects = opts._numRedirects || 0
 
     uri = url.parse(uri)
 
-    // Default options.
     var options = {
       host: uri.hostname,
       port: uri.port || 80,
@@ -114,17 +116,11 @@ Client.prototype = {
       headers: this.cookieJar.length ? { 'Cookie': this.cookieJar.join('; ') } : {}
     }
 
-    // Merge client options.
-    options = _.extend(options, this.options)
-    // Merge request options.
-    options = _.extend(options, opts)
+    options = _.extend(options, this.options, opts)
 
-    if (options.method === 'POST') {
+    if (options.method === 'POST')
       options.headers['Content-Length'] = data.length
-      options.headers['Content-Type'] = 'application/x-www-form-urlencoded'
-    }
 
-    var client = http.request
     if (uri.protocol === 'https:') {
       options.port = 443
       client = https.request
@@ -142,12 +138,12 @@ Client.prototype = {
         })
       }
 
-      if (self.options.followRedirects && ('location' in res.headers)) {
-        var newUrl = url.format(_.extend(uri, url.parse(res.headers['location'])))
+      if (('location' in res.headers) && self.options.followRedirects && opts._numRedirects < self.options.maxRedirects) {
+        opts._numRedirects++
+        var newUrl = url.resolve(uri.href, res.headers['location'])
         return self._request('GET', newUrl, null, opts, callback)
       }
 
-      // Accumulate response data.
       res.on('data', function(chunk) {
         rxdata += chunk
       }).on('end', function() {
@@ -159,7 +155,6 @@ Client.prototype = {
       callback(err, null, {})
     })
 
-    // Write POST body if necessary.
     if (data)
       request.write(data)
 
