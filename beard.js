@@ -8,7 +8,7 @@ var http = require('http')
 var Client = function Client(opts) {
   this.options = _.extend(this.options, opts)
   this.cookieJar = []
-};
+}
 
 Client.prototype = {
 
@@ -112,196 +112,202 @@ Client.prototype = {
       path: uri.pathname + (uri.search || ''),
       method: type.toUpperCase(),
       headers: this.cookieJar.length ? { 'Cookie': this.cookieJar.join('; ') } : {}
-    };
-
-    // Merge client options.
-    options = _.extend(options, this.options);
-    // Merge request options.
-    options = _.extend(options, opts);
-
-    if (options.method === 'POST') {
-      options.headers['Content-Length'] = data.length;
-      options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     }
 
-    var client = http.request;
+    // Merge client options.
+    options = _.extend(options, this.options)
+    // Merge request options.
+    options = _.extend(options, opts)
+
+    if (options.method === 'POST') {
+      options.headers['Content-Length'] = data.length
+      options.headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    }
+
+    var client = http.request
     if (uri.protocol === 'https:') {
-      options.port = 443;
-      client = https.request;
+      options.port = 443
+      client = https.request
     }
 
     var request = client(options, function(res) {
       if (options.encoding)
-        res.setEncoding(options.encoding);
+        res.setEncoding(options.encoding)
 
       if ('set-cookie' in res.headers) {
-        self.cookieJar = [];
+        self.cookieJar = []
         res.headers['set-cookie'].forEach(function(cookie) {
-          var parts = cookie.split(/[;,] */);
-          self.cookieJar.push(parts[0].trim());
-        });
+          var parts = cookie.split(/[;,] */)
+          self.cookieJar.push(parts[0].trim())
+        })
       }
 
       if (self.options.followRedirects && ('location' in res.headers)) {
-        var newUrl = url.format(_.extend(uri, url.parse(res.headers['location'])));
-        return self._request('GET', newUrl, null, opts, callback);
+        var newUrl = url.format(_.extend(uri, url.parse(res.headers['location'])))
+        return self._request('GET', newUrl, null, opts, callback)
       }
 
       // Accumulate response data.
       res.on('data', function(chunk) {
-        rxdata += chunk;
+        rxdata += chunk
       }).on('end', function() {
-        callback(null, rxdata, res);
-      });
-    });
+        callback(null, rxdata, res)
+      })
+    })
 
     request.on('error', function(err) {
-      callback(err, null, {});
-    });
+      callback(err, null, {})
+    })
 
     // Write POST body if necessary.
     if (data)
-      request.write(data);
+      request.write(data)
 
-    request.end();
+    request.end()
   },
 
   _mergeUrl: function(mergeUrl, data) {
-    var parsed = url.parse(mergeUrl, true);
-    data = _.extend(data || {}, parsed.query);
-    parsed.query = querystring.stringify(data);
-    parsed.search = '?' + parsed.query;
-    return url.format(parsed);
+    var parsed = url.parse(mergeUrl, true)
+    data = _.extend(data || {}, parsed.query)
+    parsed.query = querystring.stringify(data)
+    parsed.search = '?' + parsed.query
+    return url.format(parsed)
   }
-};
+}
 
 var Promise = function Promise() {
-  this.init();
-};
+  this.init()
+}
 
 Promise.prototype = {
 
   init: function() {
-    this.resolved = false;
-    this.rejected = false;
+    this.resolved = false
+    this.rejected = false
 
-    this._callbackArgs = [];
-    this._callbackContext = {};
-    this._done = [];
-    this._fail = [];
-    this._always = [];
-    this._doneFilter = function(v) { return v; };
-    this._failFilter = function(v) { return v; };
+    this._callbackArgs = []
+    this._callbackContext = {}
+    this._done = []
+    this._fail = []
+    this._always = []
+    this._doneFilter = function(v) { return v }
+    this._failFilter = function(v) { return v }
   },
 
   filter: function(done, fail) {
-    this._doneFilter = done || this._doneFilter;
-    this._failFilter = fail || this._failFilter;
-    return this;
+    this._doneFilter = done || this._doneFilter
+    this._failFilter = fail || this._failFilter
+    return this
   },
 
   filterDone: function(cb) {
-    return this.filter(cb, null);
+    return this.filter(cb, null)
   },
 
   filterFail: function(cb) {
-    return this.filter(null, cb);
+    return this.filter(null, cb)
   },
 
   done: function(cb) {
     if (this.resolved)
-      cb.apply(this._callbackContext, this._callbackArgs);
+      cb.apply(this._callbackContext, this._callbackArgs)
     else
-      this._done.push(cb);
+      this._done.push(cb)
 
-    return this;
+    return this
   },
 
   fail: function(cb) {
     if (this.rejected)
-      cb.apply(this._callbackContext, this._callbackArgs);
+      cb.apply(this._callbackContext, this._callbackArgs)
     else
-      this._fail.push(cb);
+      this._fail.push(cb)
 
-    return this;
+    return this
   },
 
   always: function(cb) {
     if (this.resolved || this.rejected)
-      cb.apply(this._callbackContext, this._callbackArgs);
+      cb.apply(this._callbackContext, this._callbackArgs)
     else
-      this._always.push(cb);
+      this._always.push(cb)
 
-    return this;
+    return this
   },
 
   resolve: function() {
-    return this.resolveWith.apply(this, _.toArray(arguments));
+    return this.resolveWith.apply(this, _.toArray(arguments))
   },
 
   reject: function() {
-    return this.rejectWith.apply(this, _.toArray(arguments));
+    return this.rejectWith.apply(this, _.toArray(arguments))
   },
 
   resolveWith: function(context) {
-    var self = this;
+    var self = this
 
     if (this.resolved || this.rejected)
-      return;
+      return
 
-    this.resolved = true;
-    this._callbackArgs = _.map(_.rest(arguments), this._doneFilter);
-    this._callbackContext = context;
+    this.resolved = true
+    this._callbackArgs = _.map(_.rest(arguments), this._doneFilter)
+    this._callbackContext = context
 
     this._done.forEach(function(cb) {
-      cb.apply(context, self._callbackArgs);
-    });
+      cb.apply(context, self._callbackArgs)
+    })
 
-    this._done = [];
+    this._done = []
 
-    this._runAlways();
+    this._runAlways()
 
-    return this;
+    return this
   },
 
   rejectWith: function(context) {
-    var self = this;
+    var self = this
 
     if (this.resolved || this.rejected)
-      return;
+      return
 
-    this.rejected = true;
-    this._callbackArgs = _.map(_.rest(arguments), this._failFilter);
-    this._callbackContext = context;
+    this.rejected = true
+    this._callbackArgs = _.map(_.rest(arguments), this._failFilter)
+    this._callbackContext = context
 
     this._fail.forEach(function(cb) {
-      cb.apply(context, self._callbackArgs);
-    });
+      cb.apply(context, self._callbackArgs)
+    })
 
-    this._fail = [];
+    this._fail = []
 
-    this._runAlways();
+    this._runAlways()
 
-    return this;
+    return this
   },
 
   _runAlways: function() {
-    var self = this;
+    var self = this
     this._always.forEach(function(cb) {
-      cb.apply(self._callbackContext, self._callbackArgs);
-    });
+      cb.apply(self._callbackContext, self._callbackArgs)
+    })
 
-    this._always = [];
+    this._always = []
   },
 
   isResolved: function() {
-    return this.resolved;
+    return this.resolved
   },
 
   isRejected: function() {
-    return this.rejected;
+    return this.rejected
   }
-};
+}
 
-exports.Client = Client;
-exports.Promise = Promise;
+var beard = function(opts) {
+  return new Client(opts)
+}
+
+beard.Client = Client
+beard.Promise = Promise
+
+module.exports = beard
